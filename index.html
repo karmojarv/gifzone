@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIF.TOOLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f3ef;--sf:#eceae5;--ln:#d6d2ca;
+  --tx:#1a1916;--mu:#8c897f;--acc:#1a1916;
+  --mn:'DM Mono',monospace;--ss:'DM Sans',sans-serif;
+}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--ss);font-size:13px;font-weight:300;min-height:100vh;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:0 40px}
+
+/* header */
+header{border-bottom:1px solid var(--ln);padding:22px 0 0;margin-bottom:52px}
+.hd-top{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:20px}
+.wm{font-family:var(--mn);font-size:13px;letter-spacing:.08em}
+.wm span{color:var(--mu)}
+.hm{font-family:var(--mn);font-size:11px;color:var(--mu);letter-spacing:.06em}
+nav{display:flex}
+.ni{font-family:var(--mn);font-size:11px;letter-spacing:.1em;color:var(--mu);text-transform:uppercase;padding:8px 20px 8px 0;cursor:pointer;border:none;background:none;position:relative}
+.ni.on{color:var(--tx)}
+.ni.on::after{content:'';position:absolute;bottom:-1px;left:0;right:20px;height:1px;background:var(--tx)}
+
+/* tabs */
+.tp{display:none}.tp.on{display:block}
+
+/* section label */
+.sl{font-family:var(--mn);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mu);margin-bottom:20px}
+
+/* grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--ln);border:1px solid var(--ln);margin-bottom:1px}
+.cl{background:var(--bg);padding:32px}
+.cf{background:var(--bg);border:1px solid var(--ln);border-top:none;padding:32px}
+
+/* drop */
+.dz{border:1px dashed var(--ln);background:var(--sf);padding:40px 32px;text-align:center;cursor:pointer;position:relative;transition:border-color .15s,background .15s}
+.dz:hover,.dz.ov{border-color:var(--tx);background:var(--bg)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dp{font-family:var(--mn);font-size:11px;letter-spacing:.08em;color:var(--mu);text-transform:uppercase;margin-bottom:8px}
+.dh{font-size:11px;color:var(--mu)}
+
+/* file row */
+.fr{display:none;padding:14px 0;border-bottom:1px solid var(--ln);margin-bottom:24px;align-items:center;justify-content:space-between}
+.fr.v{display:flex}
+.fn{font-family:var(--mn);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.fs{font-family:var(--mn);font-size:11px;color:var(--mu)}
+
+/* settings */
+.sr{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--ln);gap:16px}
+.sr:last-of-type{border-bottom:none}
+.sk{font-family:var(--mn);font-size:11px;letter-spacing:.06em;color:var(--mu);width:110px;flex-shrink:0;text-transform:uppercase}
+.sv{flex:1;display:flex;align-items:center;gap:10px}
+
+input[type=number],select{font-family:var(--mn);font-size:12px;color:var(--tx);background:var(--sf);border:1px solid var(--ln);padding:5px 8px;outline:none;-webkit-appearance:none;appearance:none;border-radius:0}
+input[type=number]{width:72px}
+select{width:200px;cursor:pointer}
+input[type=number]:focus,select:focus{border-color:var(--tx)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:120px;height:1px;background:var(--ln);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;background:var(--tx);border-radius:50%;cursor:pointer}
+.rv{font-family:var(--mn);font-size:12px;min-width:28px}
+.rs{display:flex;gap:16px}
+.ro{display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--mn);font-size:11px;color:var(--mu);letter-spacing:.04em}
+.ro input[type=radio]{accent-color:var(--tx);cursor:pointer}
+.ro:has(input:checked){color:var(--tx)}
+
+/* preview */
+#vp{width:100%;max-height:220px;object-fit:contain;display:none;background:#111}
+.ph{height:160px;background:var(--sf);display:flex;align-items:center;justify-content:center;font-family:var(--mn);font-size:10px;letter-spacing:.1em;color:var(--ln);text-transform:uppercase}
+
+/* actions */
+.ar{display:flex;align-items:center;gap:20px;padding:24px 0 0}
+.bc{font-family:var(--mn);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--bg);background:var(--tx);border:1px solid var(--tx);padding:10px 28px;cursor:pointer;transition:opacity .15s}
+.bc:hover:not(:disabled){opacity:.7}
+.bc:disabled{opacity:.3;cursor:not-allowed}
+.bg{font-family:var(--mn);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);background:none;border:1px solid var(--ln);padding:10px 20px;cursor:pointer;display:none}
+.bg:hover{border-color:var(--mu);color:var(--tx)}
+.en{font-family:var(--mn);font-size:11px;color:#a0341a;display:none}
+
+/* progress */
+.pw{display:none;padding:24px 0;border-top:1px solid var(--ln);margin-top:24px}
+.pl{font-family:var(--mn);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin-bottom:10px;display:flex;justify-content:space-between}
+.pt{height:1px;background:var(--ln);position:relative}
+.pf{height:1px;background:var(--tx);width:0%;transition:width .2s}
+
+/* log */
+.lw{display:none;margin-top:16px}
+.li{background:var(--sf);font-family:var(--mn);font-size:10px;color:var(--mu);padding:12px;height:64px;overflow-y:auto;line-height:1.6;white-space:pre-wrap;word-break:break-all;border:1px solid var(--ln)}
+
+/* output */
+.ow{display:none;margin-top:1px;background:var(--bg);border:1px solid var(--ln)}
+.oi{padding:32px}
+.om{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:20px;border-bottom:1px solid var(--ln);margin-bottom:24px}
+.ol{font-family:var(--mn);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mu)}
+.os{font-family:var(--mn);font-size:11px;color:var(--mu);display:flex;gap:24px}
+.os span{color:var(--tx)}
+.og{text-align:center;background:var(--sf);padding:24px;margin-bottom:24px}
+.og img{max-width:100%;max-height:320px;display:inline-block}
+.oa{display:flex;gap:12px}
+
+/* about */
+.ag{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--ln);border:1px solid var(--ln)}
+.ab{background:var(--bg);padding:32px}
+.ab h3{font-family:var(--mn);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mu);margin-bottom:16px}
+.ab p,.ab li{font-size:13px;font-weight:300;line-height:1.7;margin-bottom:8px}
+.ab ul{list-style:none}
+.ab li::before{content:'— ';color:var(--mu)}
+
+/* init overlay */
+#io{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100}
+#io.gone{display:none}
+.iw{font-family:var(--mn);font-size:13px;letter-spacing:.12em}
+.is{font-family:var(--mn);font-size:11px;letter-spacing:.08em;color:var(--mu)}
+.ib{width:200px;height:1px;background:var(--ln);position:relative;overflow:hidden}
+.ib::after{content:'';position:absolute;left:-60%;width:60%;height:100%;background:var(--tx);animation:sc 1.2s ease-in-out infinite}
+@keyframes sc{to{left:110%}}
+
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+header{animation:fu .4s .05s both}
+.tp.on{animation:fu .35s .08s both}
+</style>
+</head>
+<body>
+
+<div id="io">
+  <div class="iw">GIF.TOOLS</div>
+  <div class="ib"></div>
+  <div class="is" id="ist">loading ffmpeg engine</div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="hd-top">
+      <div class="wm">GIF.TOOLS <span>/ video to gif</span></div>
+      <div class="hm">client-side &middot; no uploads &middot; ffmpeg.wasm</div>
+    </div>
+    <nav>
+      <button class="ni on" data-tab="convert">Convert</button>
+      <button class="ni" data-tab="about">About</button>
+    </nav>
+  </header>
+
+  <div class="tp on" id="tab-convert">
+    <div class="g2">
+      <div class="cl">
+        <div class="sl">Source</div>
+        <div class="dz" id="dz">
+          <input type="file" id="fi" accept="video/*">
+          <div class="dp">drop video file</div>
+          <div class="dh">mp4 &middot; webm &middot; mov &middot; avi &middot; mkv</div>
+        </div>
+        <div class="fr" id="fr"><div class="fn" id="fn">—</div><div class="fs" id="fz">—</div></div>
+        <div style="margin-top:20px">
+          <video id="vp" controls></video>
+          <div class="ph" id="ph">no file loaded</div>
+        </div>
+      </div>
+
+      <div class="cl">
+        <div class="sl">Settings</div>
+
+        <div class="sr"><div class="sk">Start (s)</div><div class="sv"><input type="number" id="st" value="0" min="0" step="0.1"></div></div>
+        <div class="sr"><div class="sk">End (s)</div><div class="sv"><input type="number" id="et" value="" min="0" step="0.1" placeholder="auto"></div></div>
+        <div class="sr"><div class="sk">Width (px)</div><div class="sv"><input type="number" id="wd" value="480" min="100" max="1280" step="10"><span style="font-family:var(--mn);font-size:11px;color:var(--mu)">height auto</span></div></div>
+        <div class="sr"><div class="sk">FPS</div><div class="sv"><input type="range" id="fr2" min="5" max="30" value="15"><span class="rv" id="fv">15</span></div></div>
+        <div class="sr"><div class="sk">Dither</div><div class="sv">
+          <select id="dm">
+            <option value="bayer:bayer_scale=3">Bayer (sharp, smaller)</option>
+            <option value="none">None (flat colors)</option>
+            <option value="floyd_steinberg">Floyd-Steinberg (smooth)</option>
+            <option value="sierra2_4a">Sierra 2-4A</option>
+          </select>
+        </div></div>
+        <div class="sr"><div class="sk">Palette</div><div class="sv"><div class="rs">
+          <label class="ro"><input type="radio" name="pm" value="stats_mode=diff" checked> Diff</label>
+          <label class="ro"><input type="radio" name="pm" value="stats_mode=full"> Full</label>
+          <label class="ro"><input type="radio" name="pm" value="stats_mode=single"> Single</label>
+        </div></div></div>
+        <div class="sr"><div class="sk">Loop</div><div class="sv"><input type="number" id="lp" value="0" min="0" max="999" style="width:60px"><span style="font-family:var(--mn);font-size:11px;color:var(--mu)">0 = forever</span></div></div>
+
+        <div class="ar">
+          <button class="bc" id="cb" disabled>Convert to GIF</button>
+          <button class="bg" id="xb">Cancel</button>
+          <div class="en" id="en"></div>
+        </div>
+
+        <div class="pw" id="pw">
+          <div class="pl"><span id="pl2">processing</span><span id="pp">0%</span></div>
+          <div class="pt"><div class="pf" id="pf"></div></div>
+        </div>
+        <div class="lw" id="lw"><div class="li" id="li"></div></div>
+      </div>
+    </div>
+
+    <div class="ow" id="ow">
+      <div class="oi">
+        <div class="om">
+          <div class="ol">Output</div>
+          <div class="os" id="os"></div>
+        </div>
+        <div class="og"><img id="og" alt="output gif"></div>
+        <div class="oa">
+          <button class="bc" id="db">Download GIF</button>
+          <button class="bg" style="display:inline-block" id="nb">Convert another</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tp" id="tab-about">
+    <div class="ag">
+      <div class="ab">
+        <h3>How it works</h3>
+        <p>FFmpeg runs compiled to WebAssembly directly in your browser. Your video is never uploaded to any server — all processing is local.</p>
+        <p>A two-pass method is used: first a colour palette is generated from your clip, then the GIF is rendered using that palette for maximum quality.</p>
+      </div>
+      <div class="ab">
+        <h3>Settings guide</h3>
+        <ul>
+          <li>Width — output pixel width, height scales automatically</li>
+          <li>FPS — 12–15 is usually indistinguishable from 24</li>
+          <li>Dither Bayer — crispest edges, best compression</li>
+          <li>Palette Diff — best for clips with motion</li>
+          <li>Palette Full — best for static or slow clips</li>
+        </ul>
+      </div>
+      <div class="ab">
+        <h3>Smaller GIFs</h3>
+        <ul>
+          <li>Keep clips under 5 seconds</li>
+          <li>480px width or less</li>
+          <li>10–15 FPS is usually enough</li>
+          <li>Bayer dither compresses better than Floyd-Steinberg</li>
+        </ul>
+      </div>
+      <div class="ab">
+        <h3>Hosting</h3>
+        <p>Single <code style="font-family:var(--mn);font-size:12px">index.html</code> file. Works on GitHub Pages, Netlify, Cloudflare Pages, or opened directly from disk.</p>
+        <p>No backend. No file storage. Nothing to delete.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+<script>
+const {FFmpeg}=FFmpegWASM,{fetchFile,toBlobURL}=FFmpegUtil;
+let ff=null,ready=false,cf=null,ou=null,can=false;
+const g=id=>document.getElementById(id);
+
+document.querySelectorAll('.ni').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.tp').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    g('tab-'+b.dataset.tab).classList.add('on');
+  });
+});
+
+g('fr2').addEventListener('input',()=>g('fv').textContent=g('fr2').value);
+
+const dz=g('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('ov')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('ov'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('ov');if(e.dataTransfer.files[0])lf(e.dataTransfer.files[0])});
+g('fi').addEventListener('change',e=>{if(e.target.files[0])lf(e.target.files[0])});
+
+function lf(file){
+  if(!file.type.startsWith('video/')&&!file.name.match(/\.(mp4|webm|mov|avi|mkv|m4v)$/i)){se('not a recognised video file');return}
+  cf=file;
+  g('fn').textContent=file.name;
+  g('fz').textContent=(file.size/1048576).toFixed(1)+' MB';
+  g('fr').classList.add('v');
+  const url=URL.createObjectURL(file);
+  const vp=g('vp');vp.src=url;vp.style.display='block';g('ph').style.display='none';
+  vp.onloadedmetadata=()=>{g('et').value=vp.duration.toFixed(2)};
+  he();g('ow').style.display='none';
+  if(ready)g('cb').disabled=false;
+}
+
+async function loadFF(){
+  try{
+    ff=new FFmpeg();
+    ff.on('log',({message})=>{g('li').textContent+=message+'\n';g('li').scrollTop=g('li').scrollHeight});
+    ff.on('progress',({progress})=>{const p=Math.min(100,Math.round(progress*100));g('pf').style.width=p+'%';g('pp').textContent=p+'%'});
+    g('ist').textContent='loading ffmpeg core (first load ~10s)';
+    const base='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+    await ff.load({
+      coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),
+      wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm'),
+    });
+    ready=true;g('io').classList.add('gone');
+    if(cf)g('cb').disabled=false;
+  }catch(e){g('ist').textContent='failed: '+e.message}
+}
+
+g('cb').addEventListener('click',conv);
+g('xb').addEventListener('click',()=>{can=true;try{ff.terminate()}catch(e){}resetUI();loadFF()});
+
+async function conv(){
+  if(!cf||!ready)return;
+  can=false;he();
+  g('li').textContent='';g('lw').style.display='block';g('pw').style.display='block';
+  g('pf').style.width='0%';g('pp').textContent='0%';g('pl2').textContent='writing file';
+  g('ow').style.display='none';g('cb').style.display='none';g('xb').style.display='inline-block';
+
+  const fps=parseInt(g('fr2').value),width=parseInt(g('wd').value)||480;
+  const s=parseFloat(g('st').value)||0,ev=g('et').value,e=ev?parseFloat(ev):null;
+  const loop=parseInt(g('lp').value)||0,dither=g('dm').value;
+  const sm=document.querySelector('input[name="pm"]:checked').value;
+
+  try{
+    await ff.writeFile('input.mp4',await fetchFile(cf));
+    const tr=[];if(s>0)tr.push('-ss',String(s));if(e!==null)tr.push('-to',String(e));
+
+    g('pl2').textContent='generating palette';
+    await ff.exec([...tr,'-i','input.mp4','-vf',`fps=${fps},scale=${width}:-1:flags=lanczos,palettegen=${sm}`,'palette.png']);
+
+    g('pl2').textContent='rendering gif';
+    await ff.exec([...tr,'-i','input.mp4','-i','palette.png','-lavfi',`fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=${dither}`,'-loop',String(loop),'output.gif']);
+
+    const d=await ff.readFile('output.gif');
+    const blob=new Blob([d.buffer],{type:'image/gif'});
+    if(ou)URL.revokeObjectURL(ou);ou=URL.createObjectURL(blob);
+
+    g('og').src=ou;
+    const mb=(blob.size/1048576).toFixed(2);
+    g('os').innerHTML=`<span>${mb} MB</span><span>${width}px wide</span><span>${fps} fps</span>`;
+    g('ow').style.display='block';
+    g('ow').scrollIntoView({behavior:'smooth',block:'nearest'});
+    try{await ff.deleteFile('input.mp4');await ff.deleteFile('palette.png');await ff.deleteFile('output.gif')}catch(x){}
+  }catch(err){if(!can)se('conversion failed: '+err.message)}
+  finally{resetUI()}
+}
+
+g('db').addEventListener('click',()=>{
+  if(!ou)return;
+  const a=document.createElement('a');a.href=ou;
+  a.download=(cf?cf.name.replace(/\.[^.]+$/,''):'output')+'.gif';a.click();
+});
+
+g('nb').addEventListener('click',()=>{
+  cf=null;g('fr').classList.remove('v');
+  const vp=g('vp');vp.style.display='none';vp.src='';
+  g('ph').style.display='flex';g('ow').style.display='none';
+  g('lw').style.display='none';g('li').textContent='';
+  g('pw').style.display='none';g('cb').disabled=true;g('fi').value='';
+  if(ou){URL.revokeObjectURL(ou);ou=null}
+});
+
+function resetUI(){g('cb').style.display='inline-block';g('xb').style.display='none'}
+function se(m){g('en').textContent=m;g('en').style.display='block'}
+function he(){g('en').style.display='none'}
+
+loadFF();
+</script>
+</body>
+</html>

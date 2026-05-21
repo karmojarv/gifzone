@@ -4,14 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GIFZONE</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#f5f3ef;--sf:#eceae5;--ln:#d6d2ca;
   --tx:#1a1916;--mu:#8c897f;--acc:#1a1916;
-  --mn:'DM Mono',monospace;--ss:'DM Sans',sans-serif;
+  --mn:'ui-monospace','Cascadia Code','Menlo','Consolas','Liberation Mono',monospace;
+  --ss:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
 }
 html,body{background:var(--bg);color:var(--tx);font-family:var(--ss);font-size:13px;font-weight:300;min-height:100vh;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1060px;margin:0 auto;padding:0 40px}
@@ -130,8 +129,7 @@ header{animation:fu .4s .05s both}
 <div id="io">
   <div class="iw">GIFZONE</div>
   <div class="ib"></div>
-  <div style="width:200px;height:1px;background:var(--ln);position:relative;margin-top:4px"><div id="ipf" style="position:absolute;top:0;left:0;height:1px;background:var(--tx);width:0%;transition:width .15s"></div></div>
-  <div class="is" id="ist">loading ffmpeg engine</div>
+  <div class="is" id="ist">loading ffmpeg core… 0s</div>
 </div>
 
 <div class="wrap">
@@ -297,44 +295,19 @@ function lf(file){
   if(ready)g('cb').disabled=false;
 }
 
+
 async function loadFF(){
+  /* Tick a seconds counter so the user knows it's alive */
+  let secs=0;
+  const ticker=setInterval(()=>{
+    secs++;
+    g('ist').textContent=`loading ffmpeg core… ${secs}s`;
+  },1000);
+
   try{
-    /* Fetch the ~9MB WASM core manually so we can show download progress */
-    const coreBase='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist';
-    g('ist').textContent='downloading ffmpeg core…';
-
-    async function fetchWithProgress(url,label){
-      const res=await fetch(url);
-      if(!res.ok)throw new Error(`fetch ${url} → ${res.status}`);
-      const total=parseInt(res.headers.get('content-length')||'0');
-      const reader=res.body.getReader();
-      const chunks=[];let received=0;
-      while(true){
-        const{done,value}=await reader.read();
-        if(done)break;
-        chunks.push(value);received+=value.length;
-        if(total>0){
-          const pct=Math.round(received/total*100);
-          g('ist').textContent=`${label} — ${pct}%`;
-          g('ipf').style.width=pct+'%';
-        } else {
-          g('ist').textContent=`${label} — ${Math.round(received/1024)}kb`;
-        }
-      }
-      const buf=new Uint8Array(received);let pos=0;
-      for(const c of chunks){buf.set(c,pos);pos+=c.length}
-      return URL.createObjectURL(new Blob([buf]));
-    }
-
-    g('ipf').style.width='0%';
-    const coreURL=await fetchWithProgress(`${coreBase}/ffmpeg-core.js`,'core js');
-    const wasmURL=await fetchWithProgress(`${coreBase}/ffmpeg-core.wasm`,'core wasm');
-    const workerURL=await fetchWithProgress(`${coreBase}/ffmpeg-core.worker.js`,'worker');
-
-    g('ist').textContent='initialising…';
     ff=createFFmpeg({
       log:true,
-      corePath:coreURL,
+      corePath:'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
       progress:({ratio})=>{
         const p=Math.min(100,Math.round(ratio*100));
         g('pf').style.width=p+'%';g('pp').textContent=p+'%';
@@ -346,20 +319,23 @@ async function loadFF(){
         g('li').scrollTop=g('li').scrollHeight;
       }
     });
+    g('ist').textContent='loading ffmpeg core… 0s';
     await ff.load();
+    clearInterval(ticker);
     ready=true;
     g('io').classList.add('gone');
     if(cf)g('cb').disabled=false;
   }catch(e){
+    clearInterval(ticker);
     g('ist').textContent='failed: '+e.message;
-    /* Show retry button */
     const btn=document.createElement('button');
     btn.textContent='retry';
     btn.style.cssText='font-family:var(--mn);font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:none;border:1px solid var(--ln);padding:8px 20px;cursor:pointer;color:var(--mu);margin-top:8px';
-    btn.onclick=()=>{btn.remove();g('pf').style.width='0%';loadFF()};
+    btn.onclick=()=>{btn.remove();ff=null;loadFF()};
     g('io').appendChild(btn);
   }
 }
+
 
 g('cb').addEventListener('click',conv);
 g('xb').addEventListener('click',()=>{

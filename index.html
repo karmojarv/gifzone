@@ -248,10 +248,9 @@ header{animation:fu .4s .05s both}
 
 </div>
 
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <script>
-const {FFmpeg}=FFmpegWASM,{fetchFile,toBlobURL}=FFmpegUtil;
+const {createFFmpeg,fetchFile}=FFmpeg;
 let ff=null,ready=false,cf=null,ou=null,can=false;
 const g=id=>document.getElementById(id);
 
@@ -287,22 +286,37 @@ function lf(file){
 
 async function loadFF(){
   try{
-    ff=new FFmpeg();
-    ff.on('log',({message})=>{g('li').textContent+=message+'\n';g('li').scrollTop=g('li').scrollHeight});
-    ff.on('progress',({progress})=>{const p=Math.min(100,Math.round(progress*100));g('pf').style.width=p+'%';g('pp').textContent=p+'%'});
-    g('ist').textContent='loading ffmpeg core (first load ~10s)';
-    const base='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-    await ff.load({
-      coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),
-      wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm'),
+    ff=createFFmpeg({
+      log:true,
+      corePath:'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+      progress:({ratio})=>{
+        const p=Math.min(100,Math.round(ratio*100));
+        g('pf').style.width=p+'%';g('pp').textContent=p+'%';
+      }
     });
+    /* pipe ffmpeg logs to the log area */
+    const orig=console.log.bind(console);
+    ff.setLogger(({type,message})=>{
+      if(type==='fferr'||type==='ffout'){
+        g('li').textContent+=message+'\n';
+        g('li').scrollTop=g('li').scrollHeight;
+      }
+    });
+    g('ist').textContent='loading ffmpeg core (first load ~10s)';
+    await ff.load();
     ready=true;g('io').classList.add('gone');
     if(cf)g('cb').disabled=false;
   }catch(e){g('ist').textContent='failed: '+e.message}
 }
 
 g('cb').addEventListener('click',conv);
-g('xb').addEventListener('click',()=>{can=true;try{ff.terminate()}catch(e){}resetUI();loadFF()});
+g('xb').addEventListener('click',()=>{
+  can=true;
+  try{ff.exit()}catch(e){}
+  resetUI();
+  /* re-init */
+  ready=false;ff=null;loadFF();
+});
 
 async function conv(){
   if(!cf||!ready)return;
@@ -317,16 +331,17 @@ async function conv(){
   const sm=document.querySelector('input[name="pm"]:checked').value;
 
   try{
-    await ff.writeFile('input.mp4',await fetchFile(cf));
+    ff.FS('writeFile','input.mp4',await fetchFile(cf));
+
     const tr=[];if(s>0)tr.push('-ss',String(s));if(e!==null)tr.push('-to',String(e));
 
     g('pl2').textContent='generating palette';
-    await ff.exec([...tr,'-i','input.mp4','-vf',`fps=${fps},scale=${width}:-1:flags=lanczos,palettegen=${sm}`,'palette.png']);
+    await ff.run(...tr,'-i','input.mp4','-vf',`fps=${fps},scale=${width}:-1:flags=lanczos,palettegen=${sm}`,'palette.png');
 
     g('pl2').textContent='rendering gif';
-    await ff.exec([...tr,'-i','input.mp4','-i','palette.png','-lavfi',`fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=${dither}`,'-loop',String(loop),'output.gif']);
+    await ff.run(...tr,'-i','input.mp4','-i','palette.png','-lavfi',`fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=${dither}`,'-loop',String(loop),'output.gif');
 
-    const d=await ff.readFile('output.gif');
+    const d=ff.FS('readFile','output.gif');
     const blob=new Blob([d.buffer],{type:'image/gif'});
     if(ou)URL.revokeObjectURL(ou);ou=URL.createObjectURL(blob);
 
@@ -335,7 +350,7 @@ async function conv(){
     g('os').innerHTML=`<span>${mb} MB</span><span>${width}px wide</span><span>${fps} fps</span>`;
     g('ow').style.display='block';
     g('ow').scrollIntoView({behavior:'smooth',block:'nearest'});
-    try{await ff.deleteFile('input.mp4');await ff.deleteFile('palette.png');await ff.deleteFile('output.gif')}catch(x){}
+    try{ff.FS('unlink','input.mp4');ff.FS('unlink','palette.png');ff.FS('unlink','output.gif')}catch(x){}
   }catch(err){if(!can)se('conversion failed: '+err.message)}
   finally{resetUI()}
 }
